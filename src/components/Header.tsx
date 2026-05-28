@@ -53,7 +53,10 @@ export default function Header() {
           {/* Desktop */}
           <nav className="hidden md:flex items-center space-x-1">
             <Link href="/" className="px-4 py-2 rounded-full text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 transition-all">
-              {lang === "zh" ? "首页" : "Home"}
+              {lang === "zh" ? "首页FAQ" : "FAQ"}
+            </Link>
+            <Link href="/docs" className="px-4 py-2 rounded-full text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 transition-all">
+              {lang === "zh" ? "文档中心" : "Docs"}
             </Link>
             {user && (
               <Link href="/admin" className="px-4 py-2 rounded-full text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 transition-all">
@@ -68,9 +71,9 @@ export default function Header() {
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-600">
                   {user.username}
-                  {user.role === "admin" && (
-                    <span className="ml-1.5 text-xs text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">Admin</span>
-                  )}
+                  <span className="ml-1.5 text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                    {user.role === "admin" ? (lang === "zh" ? "管理员" : "Admin") : (lang === "zh" ? "员工" : "Staff")}
+                  </span>
                 </span>
                 <button onClick={logout} className="px-4 py-1.5 rounded-full text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-100/80 transition-all">
                   {lang === "zh" ? "退出" : "Logout"}

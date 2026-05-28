@@ -4,7 +4,6 @@ import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { marked } from "marked";
 
 interface FAQ {
   id: number;
@@ -88,7 +87,6 @@ export default function FAQDetailPage({ params }: { params: Promise<{ id: string
 
   const title = lang === "zh" ? faq.titleZh : faq.titleEn;
   const content = lang === "zh" ? faq.contentZh : faq.contentEn;
-  const htmlContent = marked.parse(content) as string;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fafafa]">
@@ -112,7 +110,7 @@ export default function FAQDetailPage({ params }: { params: Promise<{ id: string
             {/* Meta */}
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <span className={`text-[11px] px-2 py-1 rounded-full font-medium ${faq.type === "platform" ? "bg-blue-50 text-blue-600" : "bg-green-50 text-green-600"}`}>
-                {faq.type === "platform" ? "平台端" : "设备端"}
+                {faq.type === "platform" ? "平台端" : faq.type === "device" ? "设备端" : "其他"}
               </span>
               <span className="text-[11px] px-2 py-1 rounded-full bg-gray-100 text-gray-500">{faq.os}</span>
               {faq.visibility === "internal" && (
@@ -152,10 +150,10 @@ export default function FAQDetailPage({ params }: { params: Promise<{ id: string
                 [&_table]:w-full [&_table]:border-collapse [&_table]:my-3 [&_table]:text-[12px]
                 [&_th]:border [&_th]:border-gray-200 [&_th]:bg-gray-50 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-medium
                 [&_td]:border [&_td]:border-gray-200 [&_td]:px-3 [&_td]:py-2
-                [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-3
+                [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-3 [&_img]:outline-none [&_img]:border-0 [&_.img-wrapper]:outline-none [&_.editable-img]:border-0
                 [&_a]:text-primary-600 [&_a]:hover:underline
                 [&_hr]:my-4 [&_hr]:border-gray-200"
-              dangerouslySetInnerHTML={{ __html: htmlContent }}
+              dangerouslySetInnerHTML={{ __html: content }}
             />
           </div>
 

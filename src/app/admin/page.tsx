@@ -8,6 +8,8 @@ interface Analytics {
   publishedFaqs: number;
   draftFaqs: number;
   totalViews: number;
+  docCount: number;
+  docViews: number;
   topViewed: { id: number; titleZh: string; titleEn: string; viewCount: number }[];
   topSearches: { keyword: string; count: number }[];
   faqHelpRates: { id: number; titleZh: string; helpfulCount: number; notHelpfulCount: number; helpRate: number }[];
@@ -44,50 +46,48 @@ export default function AdminDashboard() {
     <div className="max-w-6xl mx-auto">
       <h1 className="text-2xl font-semibold text-gray-900 mb-8">Dashboard</h1>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {/* FAQ Stats */}
+      <h2 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wider">FAQ</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-2xl p-6 border border-gray-100">
           <div className="flex items-center justify-between">
-            <div>
-              <div className="text-3xl font-semibold text-gray-900">{data.totalFaqs}</div>
-              <div className="text-sm text-gray-500 mt-1">FAQ总数</div>
-            </div>
-            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-              <span className="text-2xl">📚</span>
-            </div>
+            <div><div className="text-3xl font-semibold text-gray-900">{data.totalFaqs}</div><div className="text-sm text-gray-500 mt-1">总数</div></div>
+            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center"><span className="text-2xl">📚</span></div>
           </div>
         </div>
         <div className="bg-white rounded-2xl p-6 border border-gray-100">
           <div className="flex items-center justify-between">
-            <div>
-              <div className="text-3xl font-semibold text-green-600">{data.publishedFaqs}</div>
-              <div className="text-sm text-gray-500 mt-1">已发布</div>
-            </div>
-            <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
-              <span className="text-2xl">✅</span>
-            </div>
+            <div><div className="text-3xl font-semibold text-green-600">{data.publishedFaqs}</div><div className="text-sm text-gray-500 mt-1">已发布</div></div>
+            <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center"><span className="text-2xl">✅</span></div>
           </div>
         </div>
         <div className="bg-white rounded-2xl p-6 border border-gray-100">
           <div className="flex items-center justify-between">
-            <div>
-              <div className="text-3xl font-semibold text-amber-600">{data.draftFaqs}</div>
-              <div className="text-sm text-gray-500 mt-1">草稿</div>
-            </div>
-            <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center">
-              <span className="text-2xl">📝</span>
-            </div>
+            <div><div className="text-3xl font-semibold text-amber-600">{data.draftFaqs}</div><div className="text-sm text-gray-500 mt-1">草稿</div></div>
+            <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center"><span className="text-2xl">📝</span></div>
           </div>
         </div>
         <div className="bg-white rounded-2xl p-6 border border-gray-100">
           <div className="flex items-center justify-between">
-            <div>
-              <div className="text-3xl font-semibold text-primary-600">{data.totalViews.toLocaleString()}</div>
-              <div className="text-sm text-gray-500 mt-1">总浏览量</div>
-            </div>
-            <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center">
-              <span className="text-2xl">👁</span>
-            </div>
+            <div><div className="text-3xl font-semibold text-primary-600">{data.totalViews.toLocaleString()}</div><div className="text-sm text-gray-500 mt-1">浏览量</div></div>
+            <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center"><span className="text-2xl">👁</span></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Doc Stats */}
+      <h2 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wider">文档中心</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 mb-8">
+        <div className="bg-white rounded-2xl p-6 border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div><div className="text-3xl font-semibold text-purple-600">{data.docCount || 0}</div><div className="text-sm text-gray-500 mt-1">数量</div></div>
+            <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center"><span className="text-2xl">📁</span></div>
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl p-6 border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div><div className="text-3xl font-semibold text-purple-600">{(data.docViews || 0).toLocaleString()}</div><div className="text-sm text-gray-500 mt-1">浏览量</div></div>
+            <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center"><span className="text-2xl">👁</span></div>
           </div>
         </div>
       </div>

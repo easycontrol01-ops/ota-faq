@@ -30,6 +30,17 @@ export async function GET() {
       .select({ total: sql<number>`coalesce(sum(${faqs.viewCount}), 0)` })
       .from(faqs);
 
+    // Document count & views
+    const docCountResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(faqs)
+      .where(eq(faqs.type, "other"));
+
+    const docViewsResult = await db
+      .select({ total: sql<number>`coalesce(sum(${faqs.viewCount}), 0)` })
+      .from(faqs)
+      .where(eq(faqs.type, "other"));
+
     // Top viewed FAQs
     const topViewed = await db
       .select({
@@ -86,6 +97,8 @@ export async function GET() {
       publishedFaqs: Number(publishedFaqsResult[0]?.count || 0),
       draftFaqs: Number(draftFaqsResult[0]?.count || 0),
       totalViews: Number(totalViewsResult[0]?.total || 0),
+      docCount: Number(docCountResult[0]?.count || 0),
+      docViews: Number(docViewsResult[0]?.total || 0),
       topViewed,
       topSearches,
       zeroResults,

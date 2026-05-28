@@ -5,7 +5,6 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Logo from "@/components/Logo";
-import { marked } from "marked";
 
 interface FAQ {
   id: number;
@@ -38,20 +37,12 @@ interface Tag {
   usageCount: number;
 }
 
-// Strip markdown to plain text for preview
-function stripMarkdown(md: string): string {
-  return md
-    .replace(/#{1,6}\s+/g, "")
-    .replace(/\*\*(.+?)\*\*/g, "$1")
-    .replace(/\*(.+?)\*/g, "$1")
-    .replace(/`{1,3}[^`]*`{1,3}/g, "")
-    .replace(/!\[.*?\]\(.*?\)/g, "")
-    .replace(/\[(.+?)\]\(.*?\)/g, "$1")
-    .replace(/>\s+/g, "")
-    .replace(/[-*+]\s+/g, "")
-    .replace(/\d+\.\s+/g, "")
-    .replace(/\n{2,}/g, " ")
-    .replace(/\n/g, " ")
+// Strip HTML and markdown to plain text for preview
+function stripHTML(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, "")
+    .replace(/&[a-z]+;/gi, "")
+    .replace(/&#\d+;/g, "")
     .replace(/\s{2,}/g, " ")
     .trim();
 }
@@ -67,7 +58,7 @@ export default function HomePage() {
   const [total, setTotal] = useState(0);
   const [totalViews, setTotalViews] = useState(0);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(15);
+  const [limit, setLimit] = useState(10);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
@@ -75,6 +66,7 @@ export default function HomePage() {
   const [type, setType] = useState("");
   const [os, setOs] = useState("");
   const [tagId, setTagId] = useState("");
+  const [visibility, setVisibility] = useState("");
   const [sort, setSort] = useState("recentUpdate");
 
   useEffect(() => {
@@ -98,6 +90,7 @@ export default function HomePage() {
     if (type) params.set("type", type);
     if (os) params.set("os", os);
     if (tagId) params.set("tagId", tagId);
+    if (visibility) params.set("visibility", visibility);
     params.set("sort", sort);
     params.set("page", String(page));
     params.set("limit", String(limit));
@@ -106,19 +99,19 @@ export default function HomePage() {
       .then((r) => r.json())
       .then((d) => { setFaqList(d.faqs || []); setTotal(d.total || 0); setLoading(false); })
       .catch(() => setLoading(false));
-  }, [search, categoryId, type, os, tagId, sort, page, limit]);
+  }, [search, categoryId, type, os, tagId, visibility, sort, page, limit]);
 
   useEffect(() => { loadFaqs(); }, [loadFaqs]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setPage(1); };
 
   const resetFilters = () => {
-    setCategoryId(""); setType(""); setOs(""); setTagId(""); setSort("recentUpdate"); setSearch(""); setPage(1);
+    setCategoryId(""); setType(""); setOs(""); setTagId(""); setVisibility(""); setSort("recentUpdate"); setSearch(""); setPage(1);
   };
 
   const toggleExpand = (id: number) => { setExpandedId(expandedId === id ? null : id); };
 
-  const hasActiveFilters = categoryId || type || os || tagId || search;
+  const hasActiveFilters = categoryId || type || os || tagId || visibility || search;
   const totalPages = Math.ceil(total / limit);
 
   const categoryIcons: Record<string, string> = {
@@ -155,17 +148,17 @@ export default function HomePage() {
           </form>
           <div className="flex items-center justify-center gap-8 mt-8 text-sm">
             <div className="flex items-center gap-2 text-gray-500">
-              <span className="text-lg">📚</span><span><strong className="text-gray-900">{total}</strong> 篇文章</span>
+              <span className="text-lg">📚</span><span><strong className="text-gray-900">{total}</strong> {lang === "zh" ? "个问题" : "questions"}</span>
             </div>
             <div className="flex items-center gap-2 text-gray-500">
-              <span className="text-lg">📂</span><span><strong className="text-gray-900">{categories.length}</strong> 个分类</span>
+              <span className="text-lg">📂</span><span><strong className="text-gray-900">{categories.length}</strong> {lang === "zh" ? "个分类" : "categories"}</span>
             </div>
             <div className="flex items-center gap-2 text-gray-500">
-              <span className="text-lg">👁</span><span><strong className="text-gray-900">{totalViews.toLocaleString()}</strong> 次浏览</span>
+              <span className="text-lg">👁</span><span><strong className="text-gray-900">{totalViews.toLocaleString()}</strong> {lang === "zh" ? "次浏览" : "views"}</span>
             </div>
           </div>
           {!user && (
-            <p className="text-xs text-gray-400 mt-4">💡 <Link href="/login" className="text-primary-600 hover:underline">登录</Link> 后可查看内部知识库</p>
+            <p className="text-xs text-gray-400 mt-4">💡 <Link href="/login" className="text-primary-600 hover:underline">{lang === "zh" ? "登录" : "Login"}</Link> {lang === "zh" ? "后可查看内部知识库" : "to access internal knowledge base"}</p>
           )}
         </div>
       </section>
@@ -176,7 +169,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
             <button onClick={() => { setCategoryId(""); setPage(1); }}
               className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${!categoryId ? "bg-primary-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
-              全部
+              {lang === "zh" ? "全部" : "All"}
             </button>
             {categories.map((cat) => (
               <button key={cat.id} onClick={() => { setCategoryId(String(cat.id)); setPage(1); }}
@@ -198,32 +191,41 @@ export default function HomePage() {
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <select value={type} onChange={(e) => { setType(e.target.value); setPage(1); }}
                 className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500/30">
-                <option value="">全部类型</option><option value="platform">平台端</option><option value="device">设备端</option>
+                <option value="">{lang === "zh" ? "全部类型" : "All Types"}</option><option value="platform">{lang === "zh" ? "平台端" : "Platform"}</option><option value="device">{lang === "zh" ? "设备端" : "Device"}</option><option value="other">{lang === "zh" ? "其他" : "Other"}</option>
               </select>
               <select value={os} onChange={(e) => { setOs(e.target.value); setPage(1); }}
                 className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500/30">
-                <option value="">全部系统</option><option value="Android">Android</option><option value="RTOS">RTOS</option><option value="Linux">Linux</option><option value="any">不限</option>
+                <option value="">{lang === "zh" ? "全部系统" : "All OS"}</option><option value="Android">Android</option><option value="RTOS">RTOS</option><option value="Linux">Linux</option><option value="any">{lang === "zh" ? "不限" : "Any"}</option>
               </select>
               <select value={tagId} onChange={(e) => { setTagId(e.target.value); setPage(1); }}
                 className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500/30">
-                <option value="">全部标签</option>
+                <option value="">{lang === "zh" ? "全部标签" : "All Tags"}</option>
                 {tagList.map((t) => (<option key={t.id} value={t.id}>{t.name}</option>))}
               </select>
+              {user && (
+                <select value={visibility} onChange={(e) => { setVisibility(e.target.value); setPage(1); }}
+                  className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500/30">
+                  <option value="">{lang === "zh" ? "全部范围" : "All Scope"}</option>
+                  <option value="public">{lang === "zh" ? "公开" : "Public"}</option>
+                  <option value="internal">{lang === "zh" ? "内部" : "Internal"}</option>
+                </select>
+              )}
               <select value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }}
                 className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500/30">
-                <option value="recentUpdate">最新更新</option><option value="newest">最新发布</option><option value="mostViewed">浏览最多</option><option value="mostHelpful">最有帮助</option>
+                <option value="recentUpdate">{lang === "zh" ? "最新更新" : "Recent"}</option><option value="newest">{lang === "zh" ? "最新发布" : "Newest"}</option><option value="mostViewed">{lang === "zh" ? "浏览最多" : "Popular"}</option><option value="mostHelpful">{lang === "zh" ? "最有帮助" : "Helpful"}</option>
               </select>
               {hasActiveFilters && (
-                <button onClick={resetFilters} className="px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 rounded-lg">清除</button>
+                <button onClick={resetFilters} className="px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 rounded-lg">{lang === "zh" ? "清除" : "Clear"}</button>
               )}
               <div className="ml-auto flex items-center gap-2">
-                <span className="text-sm text-gray-400">{total} 条结果</span>
+                <span className="text-sm text-gray-400">{total} {lang === "zh" ? "条结果" : "results"}</span>
                 <select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
                   className="px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30">
-                  <option value={15}>每页 15 条</option>
-                  <option value={20}>每页 20 条</option>
-                  <option value={50}>每页 50 条</option>
-                  <option value={100}>每页 100 条</option>
+                  <option value={10}>{lang === "zh" ? "每页 10 条" : "10 / page"}</option>
+                  <option value={15}>{lang === "zh" ? "每页 15 条" : "15 / page"}</option>
+                  <option value={20}>{lang === "zh" ? "每页 20 条" : "20 / page"}</option>
+                  <option value={50}>{lang === "zh" ? "每页 50 条" : "50 / page"}</option>
+                  <option value={100}>{lang === "zh" ? "每页 100 条" : "100 / page"}</option>
                 </select>
               </div>
             </div>
@@ -236,15 +238,16 @@ export default function HomePage() {
             ) : faqList.length === 0 ? (
               <div className="text-center py-16 bg-white rounded-xl border border-gray-100">
                 <div className="text-4xl mb-3">🔍</div>
-                <p className="text-gray-500">暂无结果</p>
+                <p className="text-gray-500">{lang === "zh" ? "暂无结果" : "No results"}</p>
               </div>
             ) : (
               <div className="bg-white rounded-xl border border-gray-100 divide-y divide-gray-100">
-                {faqList.map((faq) => {
+                {faqList.map((faq, index) => {
                   const content = lang === "zh" ? faq.contentZh : faq.contentEn;
-                  const preview = stripMarkdown(content);
+                  const preview = stripHTML(content);
                   const isLong = preview.length > 100;
                   const isExpanded = expandedId === faq.id;
+                  const seqNum = (page - 1) * limit + index + 1;
 
                   return (
                     <div key={faq.id} id={`faq-${faq.id}`}>
@@ -252,19 +255,19 @@ export default function HomePage() {
                       <div className="px-5 py-3.5">
                         {/* Top: Question */}
                         <div className="flex items-start gap-3">
-                          <span className="text-primary-500 mt-0.5 text-sm flex-shrink-0">Q</span>
+                          <span className="text-primary-500 mt-0.5 text-xs font-medium flex-shrink-0 bg-primary-50 w-7 h-5 rounded flex items-center justify-center">{seqNum}</span>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <Link href={`/faqs/${faq.id}`} className="text-sm font-medium text-gray-900 hover:text-primary-600 transition-colors">
                                 {lang === "zh" ? faq.titleZh : faq.titleEn}
                               </Link>
                               {faq.visibility === "internal" && (
-                                <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 leading-none">内部</span>
+                                <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 leading-none">{lang === "zh" ? "内部" : "Internal"}</span>
                               )}
                             </div>
                             <div className="flex items-center gap-2 mt-1 text-[12px] text-gray-400 leading-none">
                               <span className={`px-1.5 py-0.5 rounded ${faq.type === "platform" ? "bg-blue-50 text-blue-500" : "bg-green-50 text-green-500"}`}>
-                                {faq.type === "platform" ? "平台端" : "设备端"}
+                                {faq.type === "platform" ? (lang === "zh" ? "平台端" : "Platform") : faq.type === "device" ? (lang === "zh" ? "设备端" : "Device") : (lang === "zh" ? "其他" : "Other")}
                               </span>
                               {faq.category && <span>{faq.category.nameZh}</span>}
                               <span>{faq.os}</span>
@@ -297,7 +300,7 @@ export default function HomePage() {
                             <div>
                               <div
                                 className="text-[13px] text-gray-500 leading-relaxed [&_h1]:text-[13px] [&_h1]:font-medium [&_h1]:text-gray-700 [&_h1]:mt-3 [&_h1]:mb-1 [&_h2]:text-[13px] [&_h2]:font-medium [&_h2]:text-gray-700 [&_h2]:mt-3 [&_h2]:mb-1 [&_h3]:text-[13px] [&_h3]:font-medium [&_h3]:text-gray-700 [&_h3]:mt-2 [&_h3]:mb-1 [&_p]:mb-1.5 [&_p]:text-[13px] [&_p]:font-normal [&_ul]:pl-4 [&_ul]:mb-1.5 [&_ol]:pl-4 [&_ol]:mb-1.5 [&_li]:text-[13px] [&_li]:mb-0.5 [&_li]:font-normal [&_strong]:font-medium [&_strong]:text-gray-600 [&_blockquote]:border-l-2 [&_blockquote]:border-primary-200 [&_blockquote]:pl-3 [&_blockquote]:text-gray-500 [&_blockquote]:my-1.5 [&_code]:text-[12px] [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-gray-800 [&_pre]:text-gray-200 [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:text-[12px] [&_pre]:my-2"
-                                dangerouslySetInnerHTML={{ __html: marked.parse(content) as string }}
+                                dangerouslySetInnerHTML={{ __html: content }}
                               />
                               <div className="flex items-center gap-3 mt-2 pt-2 border-t border-gray-50">
                                 <button
@@ -332,7 +335,7 @@ export default function HomePage() {
               <div className="flex justify-center items-center gap-2 mt-6">
                 <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1}
                   className="px-4 py-2 rounded-lg text-sm border border-gray-200 bg-white disabled:opacity-40 hover:bg-gray-50">
-                  上一页
+                  {lang === "zh" ? "上一页" : "Prev"}
                 </button>
                 <div className="flex items-center gap-1">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -351,7 +354,7 @@ export default function HomePage() {
                 </div>
                 <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages}
                   className="px-4 py-2 rounded-lg text-sm border border-gray-200 bg-white disabled:opacity-40 hover:bg-gray-50">
-                  下一页
+                  {lang === "zh" ? "下一页" : "Next"}
                 </button>
               </div>
             )}
@@ -361,7 +364,7 @@ export default function HomePage() {
           <aside className="hidden lg:block w-60 flex-shrink-0 space-y-5">
             <div className="bg-white rounded-xl border border-gray-100 p-4">
               <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <span>🔥</span> 热门文章
+                <span>🔥</span> {lang === "zh" ? "热门问题" : "Popular"}
               </h3>
               <div className="space-y-2">
                 {hotFaqs.map((faq, i) => (
@@ -375,7 +378,7 @@ export default function HomePage() {
             </div>
             <div className="bg-white rounded-xl border border-gray-100 p-4">
               <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <span>🏷️</span> 热门标签
+                <span>🏷️</span> {lang === "zh" ? "热门标签" : "Tags"}
               </h3>
               <div className="flex flex-wrap gap-1.5">
                 {tagList.slice(0, 12).map((tag) => (
@@ -387,8 +390,8 @@ export default function HomePage() {
               </div>
             </div>
             <div className="bg-gray-900 rounded-xl p-4 text-white">
-              <h3 className="text-sm font-semibold mb-2">没找到答案？</h3>
-              <p className="text-xs text-gray-400 mb-3">联系技术支持团队获取帮助</p>
+              <h3 className="text-sm font-semibold mb-2">{lang === "zh" ? "没找到答案？" : "Need help?"}</h3>
+              <p className="text-xs text-gray-400 mb-3">{lang === "zh" ? "联系技术支持团队获取帮助" : "Contact our support team"}</p>
               <a href="mailto:support@ota.com" className="inline-flex items-center gap-1 text-xs text-primary-400 hover:text-primary-300">📧 support@ota.com</a>
             </div>
           </aside>

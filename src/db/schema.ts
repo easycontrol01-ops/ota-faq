@@ -13,11 +13,13 @@ import {
 export const userRoleEnum = pgEnum("user_role", ["admin", "employee"]);
 export const faqStatusEnum = pgEnum("faq_status", [
   "draft",
+  "pending",
   "published",
   "offline",
   "archived",
+  "deleted",
 ]);
-export const faqTypeEnum = pgEnum("faq_type", ["platform", "device"]);
+export const faqTypeEnum = pgEnum("faq_type", ["platform", "device", "other"]);
 export const faqOsEnum = pgEnum("faq_os", ["Android", "RTOS", "Linux", "any"]);
 export const faqVisibilityEnum = pgEnum("faq_visibility", [
   "public",
@@ -32,6 +34,7 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   role: userRoleEnum("role").notNull().default("employee"),
   disabled: boolean("disabled").notNull().default(false),
+  tempPassword: boolean("temp_password").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

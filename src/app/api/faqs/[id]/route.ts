@@ -188,7 +188,16 @@ export async function DELETE(
 
     const { id } = await params;
     const faqId = parseInt(id);
-    await db.delete(faqs).where(eq(faqs.id, faqId));
+    const url = request.nextUrl;
+    const permanent = url.searchParams.get("permanent") === "true";
+
+    if (permanent) {
+      // Permanent delete (from recycle bin)
+      await db.delete(faqs).where(eq(faqs.id, faqId));
+    } else {
+      // Soft delete → move to recycle bin
+      await db.update(faqs).set({ status: "deleted", updatedAt: new Date() }).where(eq(faqs.id, faqId));
+    }
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error(e);

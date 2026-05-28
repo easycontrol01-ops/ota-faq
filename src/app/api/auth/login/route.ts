@@ -11,9 +11,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { username, password } = body;
-    
+
     if (!username || !password) {
-      return NextResponse.json({ error: "Missing credentials" }, { status: 400 });
+      return NextResponse.json({ error: "请填写用户名和密码" }, { status: 400 });
     }
 
     const result = await db
@@ -24,37 +24,28 @@ export async function POST(request: NextRequest) {
 
     const user = result[0];
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 401 });
+      return NextResponse.json({ error: "用户名或密码错误" }, { status: 401 });
     }
-    
+
     if (user.disabled) {
-      return NextResponse.json({ error: "User disabled" }, { status: 401 });
+      return NextResponse.json({ error: "该账号已被禁用，请联系管理员" }, { status: 401 });
     }
 
     const valid = bcrypt.compareSync(password, user.passwordHash);
     if (!valid) {
-      return NextResponse.json({ error: "Invalid password" }, { status: 401 });
+      return NextResponse.json({ error: "用户名或密码错误" }, { status: 401 });
     }
 
     const token = jwt.sign(
-      {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      },
+      { id: user.id, username: user.username, email: user.email, role: user.role },
       JWT_SECRET,
       { expiresIn: "24h" }
     );
 
     const response = NextResponse.json({
       success: true,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      },
+      requirePasswordChange: user.tempPassword,
+      user: { id: user.id, username: user.username, email: user.email, role: user.role },
     });
 
     response.cookies.set("auth_token", token, {
@@ -68,6 +59,6 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("Login error:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json({ error: "登录失败，服务器异常" }, { status: 500 });
   }
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { faqs, faqTags, tags, categories, faqVersions, searchLogs } from "@/db/schema";
-import { eq, desc, ilike, or, and, sql, asc, inArray } from "drizzle-orm";
+import { eq, ne, desc, ilike, or, and, sql, asc, inArray } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
@@ -33,9 +33,18 @@ export async function GET(request: NextRequest) {
     }
 
     if (status && isInternal) {
-      conditions.push(eq(faqs.status, status as "draft" | "published" | "offline" | "archived"));
+      if (status === "deleted") {
+        conditions.push(eq(faqs.status, "deleted"));
+      } else {
+        conditions.push(eq(faqs.status, status as "draft" | "pending" | "published" | "offline" | "archived"));
+      }
     } else if (!isInternal) {
       conditions.push(eq(faqs.status, "published"));
+    }
+
+    // Exclude deleted by default unless explicitly requesting deleted
+    if (!status || status !== "deleted") {
+      conditions.push(ne(faqs.status, "deleted"));
     }
 
     if (search) {
@@ -71,7 +80,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (type) {
-      conditions.push(eq(faqs.type, type as "platform" | "device"));
+      conditions.push(eq(faqs.type, type as "platform" | "device" | "other"));
     }
 
     if (os) {
@@ -169,8 +178,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
-    if (!user || user.role !== "admin") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (!user) {
+      return NextResponse.json({ error: "请先登录" }, { status: 403 });
     }
 
     const body = await request.json();
@@ -187,19 +196,47 @@ export async function POST(request: NextRequest) {
       tagIds,
     } = body;
 
-    const publishedAt = status === "published" ? new Date() : null;
+    // Validation
+    if (!titleZh || !titleZh.trim()) {
+      return NextResponse.json({ error: "标题不能为空" }, { status: 400 });
+    }
+    if (!contentZh || !contentZh.trim()) {
+      return NextResponse.json({ error: "内容不能为空" }, { status: 400 });
+    }
+
+    // Duplicate check
+    const existing = await db
+      .select({ id: faqs.id })
+      .from(faqs)
+      .where(ilike(faqs.titleZh, titleZh.trim()))
+      .limit(1);
+
+    if (existing.length > 0) {
+      return NextResponse.json(
+        { error: `已存在相同标题的FAQ（ID: ${existing[0].id}），请修改标题或编辑已有FAQ` },
+        { status: 400 }
+      );
+    }
+
+    // Non-admin users: force status to "pending" for review
+    let finalStatus = status || "draft";
+    if (user.role !== "admin" && finalStatus === "published") {
+      finalStatus = "pending";
+    }
+
+    const publishedAt = finalStatus === "published" ? new Date() : null;
 
     const result = await db
       .insert(faqs)
       .values({
-        titleZh: titleZh || "",
-        titleEn: titleEn || "",
-        contentZh: contentZh || "",
-        contentEn: contentEn || "",
+        titleZh: titleZh.trim(),
+        titleEn: (titleEn || "").trim(),
+        contentZh: contentZh.trim(),
+        contentEn: (contentEn || "").trim(),
         type: type || "platform",
         os: os || "any",
         visibility: visibility || "public",
-        status: status || "draft",
+        status: finalStatus,
         categoryId: categoryId ? parseInt(categoryId) : null,
         createdBy: user.id,
         updatedBy: user.id,

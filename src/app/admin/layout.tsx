@@ -53,6 +53,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const navItems = [
     { href: "/admin", label: "Dashboard", icon: "📊", exact: true },
     { href: "/admin/faqs", label: "FAQ管理", icon: "📝", exact: false },
+    { href: "/admin/documents", label: "文档管理", icon: "📁", exact: false },
     { href: "/admin/categories", label: "分类管理", icon: "📂", exact: false },
     { href: "/admin/tags", label: "标签管理", icon: "🏷️", exact: false },
     ...(user.role === "admin"

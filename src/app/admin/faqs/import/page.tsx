@@ -103,7 +103,18 @@ export default function ImportFAQsPage() {
           <li>• 内容支持 Markdown 格式</li>
           <li>• 标签请使用英文逗号分隔，不存在的标签会自动创建</li>
           <li>• 导入后的FAQ状态默认为"草稿"，需在列表中手动发布</li>
+          <li>• <strong>重复标题的FAQ将自动跳过</strong>，不会重复导入</li>
         </ul>
+        <div className="mt-3 pt-3 border-t border-blue-200">
+          <h4 className="text-xs font-semibold text-blue-800 mb-1">文件限制</h4>
+          <ul className="text-xs text-blue-600 space-y-0.5">
+            <li>• 格式：.xlsx 或 .xls</li>
+            <li>• 大小：最大 5MB</li>
+            <li>• 行数：最多 500 条</li>
+            <li>• 标题：最长 500 字</li>
+            <li>• 内容：最长 50,000 字</li>
+          </ul>
+        </div>
       </div>
 
       {/* Download Template */}
@@ -224,7 +235,8 @@ export default function ImportFAQsPage() {
               </h3>
               <p className="text-sm text-gray-600 mt-1">
                 共 {result.total} 条数据，成功导入 {result.imported} 条
-                {result.errors.length > 0 && `，${result.errors.length} 条错误`}
+                {(result as unknown as {skipped?: number}).skipped ? `，跳过 ${(result as unknown as {skipped: number}).skipped} 条（重复）` : ""}
+                {result.errors.length > 0 && `，${result.errors.length} 条提示`}
               </p>
 
               {result.errors.length > 0 && (

@@ -8,7 +8,7 @@ export async function GET() {
   try {
     const user = await getCurrentUser();
     if (!user || user.role !== "admin") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      return NextResponse.json({ error: "无权限" }, { status: 403 });
     }
 
     const userList = await db
@@ -26,7 +26,7 @@ export async function GET() {
     return NextResponse.json({ users: userList });
   } catch (e) {
     console.error(e);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json({ error: "服务器错误" }, { status: 500 });
   }
 }
 
@@ -34,15 +34,30 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user || user.role !== "admin") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      return NextResponse.json({ error: "无权限" }, { status: 403 });
     }
 
-    const { username, email, password, role } = await request.json();
+    const { username, email, password, role, tempPassword } = await request.json();
+
+    if (!username || !email || !password) {
+      return NextResponse.json({ error: "请填写所有必填字段" }, { status: 400 });
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json({ error: "密码至少6位" }, { status: 400 });
+    }
+
     const passwordHash = hashPassword(password);
 
     const result = await db
       .insert(users)
-      .values({ username, email, passwordHash, role: role || "employee" })
+      .values({
+        username,
+        email,
+        passwordHash,
+        role: role || "employee",
+        tempPassword: tempPassword !== false,
+      })
       .returning({
         id: users.id,
         username: users.username,
@@ -51,8 +66,12 @@ export async function POST(request: NextRequest) {
       });
 
     return NextResponse.json({ user: result[0] });
-  } catch (e) {
+  } catch (e: unknown) {
     console.error(e);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    const msg = e instanceof Error ? e.message : "";
+    if (msg.includes("unique") || msg.includes("duplicate")) {
+      return NextResponse.json({ error: "用户名或邮箱已存在" }, { status: 400 });
+    }
+    return NextResponse.json({ error: "创建失败" }, { status: 500 });
   }
 }
