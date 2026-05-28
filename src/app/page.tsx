@@ -392,7 +392,7 @@ export default function HomePage() {
             <div className="bg-gray-900 rounded-xl p-4 text-white">
               <h3 className="text-sm font-semibold mb-2">{lang === "zh" ? "没找到答案？" : "Need help?"}</h3>
               <p className="text-xs text-gray-400 mb-3">{lang === "zh" ? "联系技术支持团队获取帮助" : "Contact our support team"}</p>
-              <a href="mailto:support@ota.com" className="inline-flex items-center gap-1 text-xs text-primary-400 hover:text-primary-300">📧 support@ota.com</a>
+              <a href="mailto:support@abupdate.com" className="inline-flex items-center gap-1 text-xs text-primary-400 hover:text-primary-300">📧 support@abupdate.com</a>
             </div>
           </aside>
         </div>

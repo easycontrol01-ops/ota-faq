@@ -22,6 +22,7 @@ export default function AdminDocumentsPage() {
   const [content, setContent] = useState("");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [dragOver, setDragOver] = useState(false);
 
   const loadDocs = () => {
     setLoading(true);
@@ -156,21 +157,41 @@ export default function AdminDocumentsPage() {
                 className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-500/30 resize-none" />
             </div>
 
-            <div>
-              <label className={`inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 cursor-pointer transition-colors ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
-                {uploading ? (
-                  <><div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" /> 上传中...</>
-                ) : (
-                  <>📎 上传附件</>
-                )}
-                <input type="file"
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip"
-                  onChange={handleUpload} className="hidden" disabled={uploading} />
-              </label>
-              <p className="text-[11px] text-gray-400 mt-1.5">
-                支持 PDF / DOC / DOCX / XLS / XLSX / PPT / PPTX / TXT / CSV / ZIP · 最大 10MB
-              </p>
+            <div
+              className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${dragOver ? "border-primary-500 bg-primary-50/30" : "border-gray-200 hover:border-gray-300"}`}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={(e) => { e.preventDefault(); setDragOver(false); }}
+              onDrop={async (e) => { e.preventDefault(); setDragOver(false); const file = e.dataTransfer.files?.[0]; if (file) { const fakeEvent = { target: { files: [file], value: "" } } as any; await handleUpload(fakeEvent); } }}
+            >
+              {dragOver ? (
+                <p className="text-primary-600 text-sm font-medium">📁 释放文件以上传</p>
+              ) : (
+                <>
+                  <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">拖拽文件到此处上传</p>
+                  <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
+                    <span>或</span>
+                    <label className={`inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 cursor-pointer transition-colors ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+                      {uploading ? (
+                        <><div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" /> 上传中...</>
+                      ) : (
+                        <>📎 选择文件</>
+                      )}
+                      <input type="file"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip"
+                        onChange={handleUpload} className="hidden" disabled={uploading} />
+                    </label>
+                  </div>
+                </>
+              )}
             </div>
+            <p className="text-[11px] text-gray-400 mt-1.5">
+              支持 PDF / DOC / DOCX / XLS / XLSX / PPT / PPTX / TXT / CSV / ZIP · 最大 10MB
+            </p>
 
             <div className="flex gap-3 pt-2">
               <button onClick={handleSave} disabled={saving}
